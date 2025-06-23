@@ -1,5 +1,5 @@
 
-#include <GL/gl.h>
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -11,6 +11,9 @@ int main() {
         return -1;
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
     GLFWwindow* window = glfwCreateWindow(640, 480, "MEF TERA", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create a Window!\n");
@@ -19,6 +22,7 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+    gladLoadGL();
 
     while (!glfwWindowShouldClose(window)) {
         

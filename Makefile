@@ -1,7 +1,7 @@
 
 CC := gcc 
-GCCFLAGS := -O2 -Wall -g
-LDFLAGS := -lglfw -lGL
+GCCFLAGS := -O2 -Wall -g -Iglad/
+LDFLAGS := -lglfw -lGL -ldl
 
 CFILES := $(wildcard *.c)
 OFILES := $(CFILES:.c=.o)
