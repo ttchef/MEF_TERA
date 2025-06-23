@@ -1,18 +1,18 @@
 
 CC := gcc 
 GCCFLAGS := -O2 -Wall -g
+LDFLAGS := -lglfw -lGL
 
 CFILES := $(wildcard *.c)
 OFILES := $(CFILES:.c=.o)
 OUTPUT := main
-BIN := bin
 
 all: $(OUTPUT)
 
 %.o: %.c 
-	$(CC) $(GCCFLAGS) -c $< -o $(BIN)/$@
+	$(CC) $(GCCFLAGS) -c $< -o $@
 
 $(OUTPUT): $(OFILES)
-	$(CC) -o $(OUTPUT) $(BIN)/$(OFILES)
+	$(CC) -o $(OUTPUT) $(OFILES) $(LDFLAGS)
 
 
