@@ -18,10 +18,15 @@ const char* getShaderCode(const char* filepath) {
     FILE* file = fopen(filepath, "r");
     if (file == NULL) {
         fprintf(stderr, "[ERROR] Failed to read from file: %s\n", filepath);
-        return "";
+        return NULL;
     }
     
     char* buffer = malloc(sizeof(char) * MAX_SHADER_LENGTH);
+    if (buffer == NULL) {
+        fprintf(stderr, "[ERROR] Couldnt Allocate memory for Shader!\n");
+        fclose(file);
+        return NULL;
+    }
     size_t bytesRead = fread(buffer, sizeof(char), MAX_SHADER_LENGTH, file);
     buffer[bytesRead] = '\0';
 
@@ -94,6 +99,37 @@ int main() {
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    
+    float vertices[] = {
+        // Cords            // Texutre Cords
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+        1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,   1.0f, 1.0f
+    };
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    unsigned int indices[] = {
+        0, 1, 2, 
+        1, 2, 3
+    };
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     unsigned int vShader = glCreateShader(GL_VERTEX_SHADER);
     unsigned int fShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -102,6 +138,9 @@ int main() {
 
     glShaderSource(vShader, 1, &vShaderSource, NULL);
     glShaderSource(fShader, 1, &fShaderSource, NULL);
+
+    free((void*)vShaderSource);
+    free((void*)fShaderSource);
 
     glCompileShader(vShader);
     printShaderLog(vShader);
@@ -121,9 +160,11 @@ int main() {
         glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glBindVertexArray(VAO);
         glUseProgram(shaderProgram);
-        glDrawArrays(GL_POINTS, 0, 1);
-
+        
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
 
