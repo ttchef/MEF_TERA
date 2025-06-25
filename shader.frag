@@ -10,6 +10,16 @@ uniform sampler2D uTexture;
 void main() {
     
     float val = texture(uTexture, TexCoord).r;
-    FragColor = vec4(val, val, val, 1.0);
+    
+    if (val < 0.2) {
+        FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+    else if (val < 0.7) {
+        FragColor = vec4(0.3, 0.6, 0.0, 1.0);
+    }
+    else {
+        FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+    }
+
 
 }
