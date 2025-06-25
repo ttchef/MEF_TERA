@@ -85,12 +85,17 @@ int main() {
     glAttachShader(shaderProgram, fShader);
     glLinkProgram(shaderProgram);
 
+    glPointSize(100);
+
     while (!glfwWindowShouldClose(window)) {
         
+        glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glfwSwapBuffers(window);
+        glUseProgram(shaderProgram);
+        glDrawArrays(GL_POINTS, 0, 1);
 
+        glfwSwapBuffers(window);
         glfwPollEvents();
 
     }
