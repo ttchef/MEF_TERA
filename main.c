@@ -30,6 +30,32 @@ const char* getShaderCode(const char* filepath) {
     return buffer;
 }
 
+void printShaderLog(unsigned int shader) {
+    int len = 0;
+    int chWritten = 0;
+    char* log;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0) {
+        log = (char*)malloc(len);
+        glGetShaderInfoLog(shader, len, &chWritten, log);
+        printf("[ERROR] Shader Log: %s\n", log);
+        free(log);
+    }
+}
+
+void printProgramLog(unsigned int program) {
+    int len = 0;
+    int chWritten = 0;
+    char* log;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0) {
+        log = (char*)malloc(len);
+        glGetProgramInfoLog(program, len, &chWritten, log);
+        printf("[ERROR] Shader Log: %s\n", log);
+        free(log);
+    }
+}
+
 int main() {
     
     if (!glfwInit()) {
@@ -78,12 +104,15 @@ int main() {
     glShaderSource(fShader, 1, &fShaderSource, NULL);
 
     glCompileShader(vShader);
+    printShaderLog(vShader);
     glCompileShader(fShader);
+    printShaderLog(fShader);
 
     unsigned int shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vShader);
     glAttachShader(shaderProgram, fShader);
     glLinkProgram(shaderProgram);
+    printProgramLog(shaderProgram);
 
     glPointSize(100);
 
