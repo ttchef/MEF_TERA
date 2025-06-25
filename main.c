@@ -85,12 +85,11 @@ int main() {
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
     float* noiseData = malloc(SCREENWIDTH * SCREENHEIGHT * sizeof(float));
-    int index = 0;
 
     // precompute noise 
     for (int y = 0; y < SCREENHEIGHT; y++) {
         for (int x = 0; x < SCREENWIDTH; x++) {
-            noiseData[index++] = fnlGetNoise2D(&noise, x, y);
+            noiseData[y * SCREENWIDTH + x] = (fnlGetNoise2D(&noise, x, y) + 1.0f) / 2.0f;
         }
     }
 
@@ -130,6 +129,19 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // Texture
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREENWIDTH, SCREENHEIGHT, 0, GL_RED, GL_FLOAT, noiseData);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Shader
     unsigned int vShader = glCreateShader(GL_VERTEX_SHADER);
     unsigned int fShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -153,7 +165,6 @@ int main() {
     glLinkProgram(shaderProgram);
     printProgramLog(shaderProgram);
 
-    glPointSize(100);
 
     while (!glfwWindowShouldClose(window)) {
         
