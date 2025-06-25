@@ -1,5 +1,6 @@
 # MEF_TERA
 
+# Building (Linux Wayland Ubuntu)
 
 # Dependencies
 - [Glfw](https://www.glfw.org/)
