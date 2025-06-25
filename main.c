@@ -2,7 +2,13 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
+#include "include/FastNoiseLite.h"
+
 #include <stdio.h>
+#include <stdlib.h>
+
+#define SCREENWIDTH 640 
+#define SCREENHEIGHT 480
 
 int main() {
     
@@ -14,7 +20,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(640, 480, "MEF TERA", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCREENWIDTH, SCREENHEIGHT, "MEF TERA", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create a Window!\n");
         glfwTerminate();
@@ -23,6 +29,19 @@ int main() {
 
     glfwMakeContextCurrent(window);
     gladLoadGL();
+
+    // Create Noise 
+    fnl_state noise = fnlCreateState();
+    noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    float* noiseData = malloc(SCREENWIDTH * SCREENHEIGHT * sizeof(float));
+    int index = 0;
+
+    // precompute noise 
+    for (int y = 0; y < SCREENHEIGHT; y++) {
+        for (int x = 0; x < SCREENWIDTH; x++) {
+            noiseData[index++] = fnlGetNoise2D(&noise, x, y);
+        }
+    }
 
     while (!glfwWindowShouldClose(window)) {
         
@@ -36,6 +55,7 @@ int main() {
     glfwDestroyWindow(window);
     glfwTerminate();
 
+    free(noiseData);
 
     return 0;
 }

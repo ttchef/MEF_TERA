@@ -1,6 +1,6 @@
 
 CC := gcc 
-GCCFLAGS := -O2 -Wall -g -Iglad/
+GCCFLAGS := -O2 -Wall -g -Iglad/ -Iinclude
 LDFLAGS := -lglfw -lGL -ldl
 
 CFILES := $(wildcard *.c)
