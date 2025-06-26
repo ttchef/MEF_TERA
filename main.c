@@ -216,8 +216,16 @@ int main() {
     glUseProgram(shaderProgram);
 
     // matrices
-    HMM_Vec3 cameraLoc = (HMM_Vec3){-0.0f, -0.0f, -8.0f};
     HMM_Vec3 cubeLoc = (HMM_Vec3){0.0f, -2.0f, 0.0f};
+    HMM_Mat4 mMat, vMat, mvMat, pMat;
+
+    // Camera
+    HMM_Vec3 cameraLoc = (HMM_Vec3){-0.0f, -0.0f, -8.0f};
+    HMM_Vec3 cameraOri = (HMM_Vec3){0.0f, 0.0f, 1.0f};
+    HMM_Vec3 cameraUp = (HMM_Vec3){0.0f, 1.0f, 0.0f};
+
+    float cameraSpeed = 0.1f;
+    float cameraSens = 1.0f;
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -228,21 +236,84 @@ int main() {
         glBindVertexArray(VAO);
         glUseProgram(shaderProgram);
         
-        HMM_Mat4 mMat = HMM_Translate(cubeLoc);
-    HMM_Mat4 vMat = HMM_Translate(cameraLoc);
-    HMM_Mat4 mvMat = HMM_MulM4(vMat, mMat);
+        mMat = HMM_Translate(cubeLoc);
+        vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
+        mvMat = HMM_MulM4(vMat, mMat);
 
-    // NO = NDC-Z from -1 to 1
-    // RH = Right Handed Coord System
-    HMM_Mat4 pMat = HMM_Perspective_RH_NO(1.0472f, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f);
+        // NO = NDC-Z from -1 to 1
+        // RH = Right Handed Coord System
+        pMat = HMM_Perspective_RH_NO(1.0472f, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f);
 
-    unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
-    unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
+        unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
+        unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
 
-    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
+        glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
 
         glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+
+        // Input
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            HMM_Vec3 newPos = HMM_MulV3F(cameraOri, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            HMM_Vec3 negated_co = {-cameraOri.X, -cameraOri.Y, -cameraOri.Z};
+            HMM_Vec3 newPos = HMM_MulV3F(negated_co, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
+            HMM_Vec3 normalized_cross = HMM_NormV3(cross_ori);
+            HMM_Vec3 negated_normalized_cross = {-normalized_cross.X, -normalized_cross.Y, -normalized_cross.Z};
+            HMM_Vec3 newPos = HMM_MulV3F(negated_normalized_cross, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
+            HMM_Vec3 normalized_cross = HMM_NormV3(cross_ori);
+            HMM_Vec3 newPos = HMM_MulV3F(normalized_cross, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+            HMM_Vec3 newPos = HMM_MulV3F(cameraUp, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+            HMM_Vec3 negated_up = {-cameraUp.X, -cameraUp.Y, -cameraUp.Z};
+            HMM_Vec3 newPos = HMM_MulV3F(negated_up, cameraSpeed);
+            cameraLoc = HMM_AddV3(cameraLoc, newPos);
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            cameraSpeed = 0.4f;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) {
+            cameraSpeed = 0.1f;
+        }
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+            double mouseX, mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
+
+            float rotX = cameraSens * (float)(mouseY - ((float)screenHeight / 2.0f)) / screenHeight;
+            float rotY = cameraSens * (float)(mouseX - ((float)screenWidth / 2.0f)) / screenWidth;
+
+            HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
+            HMM_Vec3 norm = HMM_NormV3(cross_ori);
+
+            HMM_Vec3 newOri = HMM_RotateV3AxisAngle_RH(cameraOri, norm, -rotX * HMM_PI / 180.0f);
+            
+            cameraOri = newOri;
+            cameraOri = HMM_RotateV3AxisAngle_RH(cameraOri, cameraUp, -rotY * HMM_PI / 180.0f);
+
+            glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
+        }
+        else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
         
         glfwSwapBuffers(window);
         glfwPollEvents();
