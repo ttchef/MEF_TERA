@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 unsigned int screenWidth = 1000;
 unsigned int screenHeight = 1000;
@@ -227,6 +228,7 @@ int main() {
     float cameraSpeed = 0.1f;
     float cameraSens = 1.0f;
 
+    bool cameraFirstClick = true;
 
     while (!glfwWindowShouldClose(window)) {
         
@@ -295,11 +297,16 @@ int main() {
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-            double mouseX, mouseY;
+            if (cameraFirstClick) {
+                glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
+                cameraFirstClick = false;
+            }
+
+            double mouseX = 0, mouseY = 0;
             glfwGetCursorPos(window, &mouseX, &mouseY);
 
             float rotX = cameraSens * (float)(mouseY - ((float)screenHeight / 2.0f)) / screenHeight;
-            float rotY = cameraSens * (float)(mouseX - ((float)screenWidth / 2.0f)) / screenWidth;
+            float rotY = cameraSens * (float)(mouseX - ((float)screenHeight / 2.0f)) / screenHeight;
 
             HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
             HMM_Vec3 norm = HMM_NormV3(cross_ori);
@@ -308,11 +315,12 @@ int main() {
             
             cameraOri = newOri;
             cameraOri = HMM_RotateV3AxisAngle_RH(cameraOri, cameraUp, -rotY * HMM_PI / 180.0f);
+            cameraOri = HMM_NormV3(cameraOri);
 
-            glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
         }
         else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            cameraFirstClick = true;
         }
         
         glfwSwapBuffers(window);
