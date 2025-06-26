@@ -225,13 +225,28 @@ int main() {
     HMM_Vec3 cameraOri = (HMM_Vec3){0.0f, 0.0f, 1.0f};
     HMM_Vec3 cameraUp = (HMM_Vec3){0.0f, 1.0f, 0.0f};
 
-    float cameraSpeed = 0.1f;
-    float cameraSens = 1.0f;
+    float cameraSpeed = 5.0f;
+    float cameraSens = 50.0f;
+    float actualSpeed = 0.0f; 
 
+
+    double oldMouseX, oldMouseY = 0;
     bool cameraFirstClick = true;
+
+    double lastTime = 0.0;
+    double currentTime = glfwGetTime();
+    float deltaTime = (float)(currentTime - lastTime);
+    lastTime = currentTime;
+    actualSpeed = cameraSpeed * deltaTime;
 
     while (!glfwWindowShouldClose(window)) {
         
+        currentTime = glfwGetTime();
+        deltaTime = (float)(currentTime - lastTime);
+        lastTime = currentTime;
+
+        actualSpeed = cameraSpeed * deltaTime;
+
         glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -256,25 +271,25 @@ int main() {
 
         // Input
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            HMM_Vec3 newPos = HMM_MulV3F(cameraOri, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(cameraOri, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
             HMM_Vec3 negated_co = {-cameraOri.X, -cameraOri.Y, -cameraOri.Z};
-            HMM_Vec3 newPos = HMM_MulV3F(negated_co, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(negated_co, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
             HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
             HMM_Vec3 normalized_cross = HMM_NormV3(cross_ori);
             HMM_Vec3 negated_normalized_cross = {-normalized_cross.X, -normalized_cross.Y, -normalized_cross.Z};
-            HMM_Vec3 newPos = HMM_MulV3F(negated_normalized_cross, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(negated_normalized_cross, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
             HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
             HMM_Vec3 normalized_cross = HMM_NormV3(cross_ori);
-            HMM_Vec3 newPos = HMM_MulV3F(normalized_cross, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(normalized_cross, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
@@ -283,15 +298,15 @@ int main() {
         }
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
             HMM_Vec3 negated_up = {-cameraUp.X, -cameraUp.Y, -cameraUp.Z};
-            HMM_Vec3 newPos = HMM_MulV3F(negated_up, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(negated_up, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
 
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            cameraSpeed = 0.4f;
+            actualSpeed *= 2.0f;
         }
         else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) {
-            cameraSpeed = 0.1f;
+            actualSpeed *= 0.5f;
         }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
@@ -300,13 +315,15 @@ int main() {
             if (cameraFirstClick) {
                 glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
                 cameraFirstClick = false;
+                oldMouseX = 0;
+                oldMouseY = 0;
             }
 
             double mouseX = 0, mouseY = 0;
             glfwGetCursorPos(window, &mouseX, &mouseY);
 
-            float rotX = cameraSens * (float)(mouseY - ((float)screenHeight / 2.0f)) / screenHeight;
-            float rotY = cameraSens * (float)(mouseX - ((float)screenHeight / 2.0f)) / screenHeight;
+            float rotX = cameraSens * (float)(mouseY - oldMouseY) / screenHeight;
+            float rotY = cameraSens * (float)(mouseX - oldMouseX) / screenWidth;
 
             HMM_Vec3 cross_ori = HMM_Cross(cameraOri, cameraUp);
             HMM_Vec3 norm = HMM_NormV3(cross_ori);
@@ -316,6 +333,9 @@ int main() {
             cameraOri = newOri;
             cameraOri = HMM_RotateV3AxisAngle_RH(cameraOri, cameraUp, -rotY * HMM_PI / 180.0f);
             cameraOri = HMM_NormV3(cameraOri);
+
+            oldMouseX = mouseX;
+            oldMouseY = mouseY;
 
         }
         else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
