@@ -4,17 +4,20 @@
 
 #define FNL_IMPL
 #include "include/FastNoiseLite.h"
+#include "include/HandmadeMath.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCREENWIDTH 640 
-#define SCREENHEIGHT 480
+unsigned int screenWidth = 1000;
+unsigned int screenHeight = 1000;
 
 #define MAX_SHADER_LENGTH 3000
+#define VERTEX_WIDTH 600
+#define VERTEX_DEPTH 600
 
 // needs to be freed 
-const char* getShaderCode(const char* filepath) {
+char* getShaderCode(const char* filepath) {
     FILE* file = fopen(filepath, "r");
     if (file == NULL) {
         fprintf(stderr, "[ERROR] Failed to read from file: %s\n", filepath);
@@ -61,6 +64,34 @@ void printProgramLog(unsigned int program) {
     }
 }
 
+float* computeVertices(unsigned int width, unsigned int depth) {
+    
+    unsigned int verticesCount = width * depth;
+    float* vertices = malloc(sizeof(float) * verticesCount);
+
+    float stepZ = 1.0f / depth;
+    float stepX = 1.0f / width;
+
+    unsigned int index = 0;
+    for (float z = -1.0f; z < 1; z += stepZ) {
+        for (float x = -1.0f; x < 1; x += stepX) {
+            vertices[index++] = x;
+            vertices[index++] = 0.0f;
+            vertices[index++] = z;
+        }
+    }
+    
+    return vertices;
+    
+}
+
+void glfwSizeCallback(GLFWwindow* window, int width, int height) {
+    
+    screenWidth = width;
+    screenHeight = height;
+    glViewport(0, 0, width, height);
+}
+
 int main() {
     
     if (!glfwInit()) {
@@ -71,25 +102,32 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(SCREENWIDTH, SCREENHEIGHT, "MEF TERA", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "MEF TERA", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create a Window!\n");
         glfwTerminate();
         return -1;
     }
 
+    // glfw Setup
     glfwMakeContextCurrent(window);
+    glfwSetWindowSizeCallback(window, glfwSizeCallback);
+
+    // Glad & OpenGL Setup
     gladLoadGL();
+    glViewport(0, 0, screenWidth, screenHeight);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LEQUAL);
 
     // Create Noise 
     fnl_state noise = fnlCreateState();
     noise.noise_type = FNL_NOISE_OPENSIMPLEX2;
-    float* noiseData = malloc(SCREENWIDTH * SCREENHEIGHT * sizeof(float));
+    float* noiseData = malloc(screenWidth * screenHeight * sizeof(float));
 
     // precompute noise 
-    for (int y = 0; y < SCREENHEIGHT; y++) {
-        for (int x = 0; x < SCREENWIDTH; x++) {
-            noiseData[y * SCREENWIDTH + x] = (fnlGetNoise2D(&noise, x, y) + 1.0f) / 2.0f;
+    for (int y = 0; y < screenHeight; y++) {
+        for (int x = 0; x < screenWidth; x++) {
+            noiseData[y * screenWidth + x] = (fnlGetNoise2D(&noise, x, y) + 1.0f) / 2.0f;
         }
     }
 
@@ -103,11 +141,14 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     
     float vertices[] = {
-        // Cords            // Texutre Cords
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-        1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,   1.0f, 1.0f
+        -0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        -0.5f, 0.5f, -0.5f,
+        0.5f, 0.5f, -0.5f,
+        -0.5f, -0.5f, -1.5f,
+        0.5f, -0.5f, -1.5f,
+        -0.5f, 0.5f, -1.5f,
+        0.5f, 0.5f, -1.5f,
     };
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -117,24 +158,32 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     unsigned int indices[] = {
-        0, 1, 2, 
-        1, 2, 3
+        0, 1, 2,
+        1, 2, 3,
+        2, 3, 5,
+        3, 5, 7,
+        4, 5, 7,
+        4, 6, 7,
+        0, 2, 4,
+        2, 4, 6
     };
 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    /*
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    */
 
     // Texture
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREENWIDTH, SCREENHEIGHT, 0, GL_RED, GL_FLOAT, noiseData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, screenWidth, screenHeight, 0, GL_RED, GL_FLOAT, noiseData);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -164,17 +213,36 @@ int main() {
     glAttachShader(shaderProgram, fShader);
     glLinkProgram(shaderProgram);
     printProgramLog(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    // matrices
+    HMM_Vec3 cameraLoc = (HMM_Vec3){-0.0f, -0.0f, -8.0f};
+    HMM_Vec3 cubeLoc = (HMM_Vec3){0.0f, -2.0f, 0.0f};
 
 
     while (!glfwWindowShouldClose(window)) {
         
         glClearColor(0, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindVertexArray(VAO);
         glUseProgram(shaderProgram);
         
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        HMM_Mat4 mMat = HMM_Translate(cubeLoc);
+    HMM_Mat4 vMat = HMM_Translate(cameraLoc);
+    HMM_Mat4 mvMat = HMM_MulM4(vMat, mMat);
+
+    // NO = NDC-Z from -1 to 1
+    // RH = Right Handed Coord System
+    HMM_Mat4 pMat = HMM_Perspective_RH_NO(1.0472f, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f);
+
+    unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
+    unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
+
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
+
+        glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
