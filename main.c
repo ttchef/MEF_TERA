@@ -6,6 +6,9 @@
 #include "include/FastNoiseLite.h"
 #include "include/HandmadeMath.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -14,8 +17,8 @@ unsigned int screenWidth = 1000;
 unsigned int screenHeight = 1000;
 
 #define MAX_SHADER_LENGTH 3000
-#define VERTEX_WIDTH 600
-#define VERTEX_DEPTH 600
+#define VERTEX_WIDTH 200
+#define VERTEX_DEPTH 200
 
 // needs to be freed 
 char* getShaderCode(const char* filepath) {
@@ -126,9 +129,9 @@ int main() {
     float* noiseData = malloc(screenWidth * screenHeight * sizeof(float));
 
     // precompute noise 
-    for (int y = 0; y < screenHeight; y++) {
-        for (int x = 0; x < screenWidth; x++) {
-            noiseData[y * screenWidth + x] = (fnlGetNoise2D(&noise, x, y) + 1.0f) / 2.0f;
+    for (int y = 0; y < VERTEX_DEPTH; y++) {
+        for (int x = 0; x < VERTEX_WIDTH; x++) {
+            noiseData[y * VERTEX_WIDTH + x] = (fnlGetNoise2D(&noise, x, y) + 1.0f) / 2.0f;
         }
     }
 
@@ -253,25 +256,39 @@ int main() {
         glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(VAO);
-        glUseProgram(shaderProgram);
-        
-        mMat = HMM_Translate(cubeLoc);
-        vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
-        mvMat = HMM_MulM4(vMat, mMat);
 
         // NO = NDC-Z from -1 to 1
         // RH = Right Handed Coord System
         pMat = HMM_Perspective_RH_NO(1.0472f, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f);
 
-        unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
-        unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
+        for (int y = 0; y < VERTEX_DEPTH; y++) {
+            for (int x = 0; x < VERTEX_WIDTH; x++) {
+                glBindVertexArray(VAO);
+                glUseProgram(shaderProgram);
+        
+                cubeLoc = (HMM_Vec3){x, 50.0f * noiseData[y * VERTEX_WIDTH + x], y};
 
-        glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
+                HMM_Mat4 sMat = HMM_Scale((HMM_Vec3){0.5f, 0.5f, 0.5f});
+                HMM_Mat4 tMat = HMM_Translate(cubeLoc);
+                mMat = HMM_MulM4(sMat, tMat);
+                vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
+                mvMat = HMM_MulM4(vMat, mMat);
 
-        glDrawElements(GL_TRIANGLES, 38, GL_UNSIGNED_INT, 0);
+                unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
+                unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
 
+                glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
+                glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
+
+                unsigned int cubeHeight = glGetUniformLocation(shaderProgram, "cubeHeight");
+                glUniform1f(cubeHeight, noiseData[y * VERTEX_WIDTH + x] * 50.0f);
+
+                glDrawElements(GL_TRIANGLES, 38, GL_UNSIGNED_INT, 0);
+
+            }
+        }
+
+        
         // Input
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             HMM_Vec3 newPos = HMM_MulV3F(cameraOri, actualSpeed);
@@ -306,10 +323,10 @@ int main() {
         }
 
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            actualSpeed *= 2.0f;
+            actualSpeed = cameraSpeed * deltaTime * 10.0f;
         }
         else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) {
-            actualSpeed *= 0.5f;
+             actualSpeed = cameraSpeed * deltaTime * 0.5f;
         }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {

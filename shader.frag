@@ -4,23 +4,23 @@
 out vec4 FragColor;
 
 uniform sampler2D uTexture;
+uniform float cubeHeight;
 
 void main() {
     
-    
-    /*
-    if (val < 0.2) {
-        FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    vec3 color;
+    if (cubeHeight < 20) {
+        color = vec3(0.0, 0.0, 1.0);
     }
-    else if (val < 0.7) {
-        FragColor = vec4(0.8, 0.8, 0.0, 1.0);
+    else if (cubeHeight < 40) {
+        color = vec3(0.8, 0.8, 0.2);
     }
-    else {
-        FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+    else if (cubeHeight < 80) {
+        color = vec3(0.5, 0.5, 0.5);
     }
-    */ 
-
-    FragColor = vec4(0.3, 0.5, 0.5, 1.0);
-    
+    else if (cubeHeight < 300) {
+        color = vec3(1.0, 1.0, 1.0);
+    }
+    FragColor = vec4(color, 1.0);
 }
 
