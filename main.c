@@ -142,14 +142,14 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     
     float vertices[] = {
-        -0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        -0.5f, 0.5f, -0.5f,
-        0.5f, 0.5f, -0.5f,
-        -0.5f, -0.5f, -1.5f,
-        0.5f, -0.5f, -1.5f,
-        -0.5f, 0.5f, -1.5f,
-        0.5f, 0.5f, -1.5f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, 1.0f, -1.0f,
+        1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, -1.0f
     };
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -159,14 +159,18 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     unsigned int indices[] = {
-        0, 1, 2,
         1, 2, 3,
-        2, 3, 5,
-        3, 5, 7,
-        4, 5, 7,
-        4, 6, 7,
-        0, 2, 4,
-        2, 4, 6
+        7, 6, 5,
+        4, 5, 1,
+        5, 6, 2, 
+        2, 6, 7,
+        0, 3, 7,
+        0, 1, 3,
+        4, 7, 5,
+        0, 4, 1,
+        1, 5, 2,
+        3, 2, 7,
+        4, 0, 7
     };
 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -229,7 +233,6 @@ int main() {
     float cameraSens = 50.0f;
     float actualSpeed = 0.0f; 
 
-
     double oldMouseX, oldMouseY = 0;
     bool cameraFirstClick = true;
 
@@ -267,7 +270,7 @@ int main() {
         glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
 
-        glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 38, GL_UNSIGNED_INT, 0);
 
         // Input
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -293,7 +296,7 @@ int main() {
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-            HMM_Vec3 newPos = HMM_MulV3F(cameraUp, cameraSpeed);
+            HMM_Vec3 newPos = HMM_MulV3F(cameraUp, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
@@ -314,17 +317,16 @@ int main() {
 
             double mouseX, mouseY;
             float rotX, rotY;
-
+            
             glfwGetCursorPos(window, &mouseX, &mouseY);
 
             if (cameraFirstClick) {
-                //glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
+                glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);
                 cameraFirstClick = false;
                 oldMouseX = mouseX;
                 oldMouseY = mouseY;
             }
                            
-
             rotX = cameraSens * (float)(mouseY - oldMouseY) / screenHeight;
             rotY = cameraSens * (float)(mouseX - oldMouseX) / screenWidth;
 
@@ -339,12 +341,12 @@ int main() {
 
             oldMouseX = mouseX;
             oldMouseY = mouseY;
-            
 
         }
-        else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+        else if (!cameraFirstClick && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             cameraFirstClick = true;
+            glfwSetCursorPos(window, screenWidth / 2.0f, screenHeight / 2.0f);  
         }
         
         glfwSwapBuffers(window);
