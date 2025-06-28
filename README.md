@@ -9,3 +9,4 @@
 - [FastNoise](https://github.com/Auburn/FastNoiseLite)
 - [HandmadeMath](https://github.com/HandmadeMath/HandmadeMath.git)
 - [STB_Image](https://github.com/nothings/stb/blob/master/stb_image.h)
+- [firef](https://github.com/ttchef/firef.git)

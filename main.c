@@ -9,6 +9,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
+#define FIREF_IMPL
+#include "include/firef.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -135,6 +138,10 @@ int main() {
         }
     }
 
+    // Load cube.obj 
+    fr_Obj cube;
+    fr_loadObj("cube.obj", &cube);
+
     // OpenGL stuff 
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
@@ -143,40 +150,14 @@ int main() {
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    
-    float vertices[] = {
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f
-    };
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cube.numVertices * sizeof(float), cube.vertices, GL_STATIC_DRAW);
 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-    unsigned int indices[] = {
-        1, 2, 3,
-        7, 6, 5,
-        4, 5, 1,
-        5, 6, 2, 
-        2, 6, 7,
-        0, 3, 7,
-        0, 1, 3,
-        4, 7, 5,
-        0, 4, 1,
-        1, 5, 2,
-        3, 2, 7,
-        4, 0, 7
-    };
-
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube.numIndicies * sizeof(unsigned int), cube.indicies, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
