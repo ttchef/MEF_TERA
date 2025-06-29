@@ -140,7 +140,8 @@ int main() {
 
     // Load cube.obj 
     fr_Obj cube;
-    fr_loadObj("cube.obj", &cube);
+    fr_loadObj("SwordMinecraft.obj", &cube);
+    fr_printObj(&cube);
 
     // OpenGL stuff 
     unsigned int VAO;
@@ -242,32 +243,22 @@ int main() {
         // RH = Right Handed Coord System
         pMat = HMM_Perspective_RH_NO(1.0472f, (float)screenWidth / (float)screenHeight, 0.1f, 1000.0f);
 
-        for (int y = 0; y < VERTEX_DEPTH; y++) {
-            for (int x = 0; x < VERTEX_WIDTH; x++) {
-                glBindVertexArray(VAO);
-                glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glUseProgram(shaderProgram);
         
-                cubeLoc = (HMM_Vec3){x, 50.0f * noiseData[y * VERTEX_WIDTH + x], y};
+        HMM_Mat4 sMat = HMM_Scale((HMM_Vec3){0.5f, 0.5f, 0.5f});
+        HMM_Mat4 tMat = HMM_Translate(cubeLoc);
+        mMat = HMM_MulM4(sMat, tMat);
+        vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
+        mvMat = HMM_MulM4(vMat, mMat);
 
-                HMM_Mat4 sMat = HMM_Scale((HMM_Vec3){0.5f, 0.5f, 0.5f});
-                HMM_Mat4 tMat = HMM_Translate(cubeLoc);
-                mMat = HMM_MulM4(sMat, tMat);
-                vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
-                mvMat = HMM_MulM4(vMat, mMat);
+        unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
+        unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
 
-                unsigned int mvLoc = glGetUniformLocation(shaderProgram, "mv_matrix");
-                unsigned int projLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
+        glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
 
-                glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
-                glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
-
-                unsigned int cubeHeight = glGetUniformLocation(shaderProgram, "cubeHeight");
-                glUniform1f(cubeHeight, noiseData[y * VERTEX_WIDTH + x] * 50.0f);
-
-                glDrawElements(GL_TRIANGLES, 38, GL_UNSIGNED_INT, 0);
-
-            }
-        }
+        glDrawElements(GL_TRIANGLES, cube.numIndicies, GL_UNSIGNED_INT, 0);
 
         
         // Input
@@ -351,6 +342,8 @@ int main() {
         glfwPollEvents();
 
     }
+
+    fr_freeObj(&cube);
 
     glfwDestroyWindow(window);
     glfwTerminate();
