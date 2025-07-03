@@ -253,7 +253,7 @@ int main() {
         glBindVertexArray(VAO);
         glUseProgram(shaderProgram);
         
-        HMM_Mat4 sMat = HMM_Scale((HMM_Vec3){0.5f, 0.5f, 0.5f});
+        HMM_Mat4 sMat = HMM_Scale((HMM_Vec3){0.01f, 0.01f, 0.01f});
         HMM_Mat4 tMat = HMM_Translate(cubeLoc);
         mMat = HMM_MulM4(sMat, tMat);
         vMat = HMM_LookAt_RH(cameraLoc, HMM_AddV3(cameraLoc, cameraOri), cameraUp);
@@ -264,6 +264,9 @@ int main() {
 
         glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
+
+        unsigned int timeLoc = glGetUniformLocation(shaderProgram, "uTime");
+        glUniform1f(timeLoc, currentTime);
 
         glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT, 0);
 
