@@ -139,10 +139,16 @@ int main() {
     }
 
     // Load cube.obj 
-    fr_Obj cube;
-    fr_loadObj("SwordMinecraft.obj", &cube);
-    fr_printObj(&cube);
-
+    Obj mesh = load_obj("dragon.obj");
+    /*
+    printf("\n==== Vertex Dump ====\n");
+    for (size_t i = 0; i < mesh.vertex_count; i += 8) {
+        printf("Vertex %zu:\n", i / 8);
+        printf("  Position:  %.3f, %.3f, %.3f\n", mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2]);
+        printf("  UV:        %.3f, %.3f\n", mesh.vertices[i + 3], mesh.vertices[i + 4]);
+        printf("  Normal:    %.3f, %.3f, %.3f\n", mesh.vertices[i + 5], mesh.vertices[i + 6], mesh.vertices[i + 7]);
+    }
+*/
     // OpenGL stuff 
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
@@ -152,22 +158,23 @@ int main() {
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, cube.numVertices * sizeof(float), cube.vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertex_count * sizeof(float), mesh.vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.index_count * sizeof(unsigned int), mesh.indices, GL_STATIC_DRAW);
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube.numIndicies * sizeof(unsigned int), cube.indicies, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    /*
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    */
-
+    
     // Texture
     unsigned int texture;
     glGenTextures(1, &texture);
@@ -258,10 +265,17 @@ int main() {
         glUniformMatrix4fv(mvLoc, 1, GL_FALSE, (float*)mvMat.Elements);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, (float*)pMat.Elements);
 
-        glDrawElements(GL_TRIANGLES, cube.numIndicies, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT, 0);
 
         
         // Input
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            actualSpeed = cameraSpeed * deltaTime * 10.0f;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) {
+             actualSpeed = cameraSpeed * deltaTime * 0.5f;
+        }
+
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             HMM_Vec3 newPos = HMM_MulV3F(cameraOri, actualSpeed);
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
@@ -294,12 +308,6 @@ int main() {
             cameraLoc = HMM_AddV3(cameraLoc, newPos);
         }
 
-        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            actualSpeed = cameraSpeed * deltaTime * 10.0f;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) {
-             actualSpeed = cameraSpeed * deltaTime * 0.5f;
-        }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -342,8 +350,8 @@ int main() {
         glfwPollEvents();
 
     }
-
-    fr_freeObj(&cube);
+    
+    free_obj(&mesh);
 
     glfwDestroyWindow(window);
     glfwTerminate();
