@@ -1,5 +1,7 @@
 # MEF_TERA
 
+![Image](/res/image.png)
+
 # Building (Linux Wayland Ubuntu)
 
 # Dependencies
